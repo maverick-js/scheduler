@@ -1,4 +1,4 @@
-import { createScheduler } from '.';
+import { createScheduler } from '../src';
 
 it('should batch tasks', async () => {
   const scheduler = createScheduler();
