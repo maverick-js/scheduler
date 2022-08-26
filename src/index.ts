@@ -30,15 +30,13 @@ export type Scheduler = {
  * ```
  */
 export function createScheduler(): Scheduler {
-  const served = new Set<ScheduledTask>();
   const queue = new Set<ScheduledTask>();
   const microtask = Promise.resolve();
   const callbacks = new Set<() => void>();
   const queueTask = typeof queueMicrotask !== 'undefined' ? queueMicrotask : microtask.then;
 
   function enqueue(task: ScheduledTask) {
-    // `processed` is only populated during a flush.
-    if (!served.has(task)) queue.add(task);
+    queue.add(task);
     scheduleFlush();
   }
 
@@ -51,15 +49,11 @@ export function createScheduler(): Scheduler {
   }
 
   function flush() {
-    do {
-      for (const task of queue) {
-        task();
-        served.add(task);
-        queue.delete(task);
-      }
-    } while (queue.size > 0);
+    for (const task of queue) {
+      task();
+    }
 
-    served.clear();
+    queue.clear();
     flushing = false;
 
     for (const callback of callbacks) callback();
@@ -68,7 +62,7 @@ export function createScheduler(): Scheduler {
   return {
     tick: microtask,
     enqueue,
-    served: (task) => served.has(task),
+    served: (task) => queue.has(task),
     flush: scheduleFlush,
     flushSync: flush,
     onFlush: (callback) => {
