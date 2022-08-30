@@ -40,9 +40,6 @@ stop(); // unsubscribe
 // Schedule a flush - can be invoked more than once.
 scheduler.flush();
 
-// Check during a flush whether task has been served.
-scheduler.served(taskA);
-
 // Wait for flush to complete.
 await scheduler.tick;
 
