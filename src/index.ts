@@ -4,7 +4,6 @@ export type StopFlushUpdates = () => void;
 export type Scheduler = {
   tick: Promise<void>;
   enqueue: (task: ScheduledTask) => void;
-  served: (task: ScheduledTask) => boolean;
   flush: () => void;
   flushSync: () => void;
   onFlush: (callback: () => void) => StopFlushUpdates;
@@ -49,8 +48,11 @@ export function createScheduler(): Scheduler {
   }
 
   function flush() {
-    for (const task of queue) task();
-    queue.clear();
+    for (const task of queue) {
+      task();
+      queue.delete(task);
+    }
+
     flushing = false;
     for (const callback of callbacks) callback();
   }
@@ -58,7 +60,6 @@ export function createScheduler(): Scheduler {
   return {
     tick: microtask,
     enqueue,
-    served: (task) => queue.has(task),
     flush: scheduleFlush,
     flushSync: flush,
     onFlush: (callback) => {
