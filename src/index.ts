@@ -49,13 +49,9 @@ export function createScheduler(): Scheduler {
   }
 
   function flush() {
-    for (const task of queue) {
-      task();
-    }
-
+    for (const task of queue) task();
     queue.clear();
     flushing = false;
-
     for (const callback of callbacks) callback();
   }
 
