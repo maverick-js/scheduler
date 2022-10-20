@@ -6,6 +6,7 @@ export type Scheduler = {
   enqueue: (task: ScheduledTask) => void;
   flush: () => void;
   flushSync: () => void;
+  onBeforeFlush: (callback: () => void) => StopFlushUpdates;
   onFlush: (callback: () => void) => StopFlushUpdates;
 };
 
@@ -31,40 +32,52 @@ export type Scheduler = {
 export function createScheduler(): Scheduler {
   const queue = new Set<ScheduledTask>();
   const microtask = Promise.resolve();
-  const callbacks = new Set<() => void>();
+  const beforeCallbacks = new Set<() => void>();
+  const afterCallbacks = new Set<() => void>();
   const queueTask = typeof queueMicrotask !== 'undefined' ? queueMicrotask : microtask.then;
 
-  function enqueue(task: ScheduledTask) {
+  const enqueue = (task: ScheduledTask) => {
     queue.add(task);
     scheduleFlush();
-  }
+  };
 
   let flushing = false;
-  function scheduleFlush() {
+  const scheduleFlush = () => {
     if (!flushing) {
       flushing = true;
       queueTask(flush);
     }
-  }
+  };
 
-  function flush() {
+  const flush = () => {
+    runAll(beforeCallbacks);
+
     for (const task of queue) {
       task();
       queue.delete(task);
     }
 
     flushing = false;
-    for (const callback of callbacks) callback();
-  }
+    runAll(afterCallbacks);
+  };
 
   return {
     tick: microtask,
     enqueue,
     flush: scheduleFlush,
     flushSync: flush,
-    onFlush: (callback) => {
-      callbacks.add(callback);
-      return () => callbacks.delete(callback);
-    },
+    onBeforeFlush: hook(beforeCallbacks),
+    onFlush: hook(afterCallbacks),
   };
+}
+
+function hook(callbacks: Set<() => void>) {
+  return (callback: () => void) => {
+    callbacks.add(callback);
+    return () => callbacks.delete(callback);
+  };
+}
+
+function runAll(callbacks: Set<() => void>) {
+  for (const callback of callbacks) callback();
 }

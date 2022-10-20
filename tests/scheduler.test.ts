@@ -43,6 +43,29 @@ it('should flush queue synchronously', async () => {
   expect(a).toBe(3);
 });
 
+it('should call `onBeforeFlush` callbacks', () => {
+  const scheduler = createScheduler();
+
+  const callbackA = vi.fn();
+  const callbackB = vi.fn();
+
+  const removeA = scheduler.onBeforeFlush(callbackA);
+  const removeB = scheduler.onBeforeFlush(callbackB);
+
+  scheduler.flushSync();
+
+  expect(callbackA).toHaveBeenCalledTimes(1);
+  expect(callbackB).toHaveBeenCalledTimes(1);
+
+  removeA();
+  removeB();
+
+  scheduler.flushSync();
+
+  expect(callbackA).toHaveBeenCalledTimes(1);
+  expect(callbackB).toHaveBeenCalledTimes(1);
+});
+
 it('should call `onFlush` callbacks', () => {
   const scheduler = createScheduler();
 
