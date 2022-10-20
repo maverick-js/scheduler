@@ -2,7 +2,7 @@
   "name": "@maverick-js/scheduler",
   "description": "A tiny (~250B) microtask scheduler.",
   "license": "MIT",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
   "module": "dist/index.js",
   "sideEffects": false,
